@@ -487,4 +487,22 @@ describe('state-machine', () => {
     expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B' })
     expect(machine.transition('B', 'NEXT')).toBeUndefined()
   })
+
+  it('should not transition given a condition that returns false', () => {
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              target: 'B',
+              cond: () => false
+            }
+          }
+        },
+        B: {}
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.transition('A', 'NEXT')).toBeUndefined()
+  })
 })

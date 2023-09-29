@@ -14,6 +14,7 @@ export interface State<TEvent extends EventObject, TState extends Typestate> {
 export type Transition<TEvent extends EventObject, TState extends Typestate> = TState['value'] | {
   target?: TState['value']
   actions?: Actions<TEvent>
+  cond?: (state: State<TEvent, TState>, event: TEvent) => boolean
 }
 
 export type ActionFunction<TEvent extends EventObject> = (event?: TEvent['type'] | TEvent) => void

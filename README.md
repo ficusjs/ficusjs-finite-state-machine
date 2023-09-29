@@ -13,7 +13,7 @@ A simple finite state machine.
 - [x] Trigger transitions with object
 - [x] Transition actions
 - [ ] Context
-- [ ] Guards
+- [x] Guards
 - [x] Entry and exit actions
 
 ## Usage

@@ -4,6 +4,7 @@ import {
   type State,
   type StateMachineConfig,
   type StateMachineInterface,
+  type Transition,
   type Typestate
 } from './state-machine-types'
 
@@ -40,14 +41,17 @@ class StateMachine<TEvent extends EventObject, TState extends Typestate> impleme
     if (transition == null) {
       return undefined
     }
-    const { target, actions } = typeof transition === 'string'
-      ? { target: transition, actions: undefined }
+    const { target, actions, cond } = typeof transition === 'string'
+      ? ({ target: transition, actions: undefined, cond: undefined } satisfies Transition<TEvent, TState>)
       : transition
     if (target == null) {
       return undefined
     }
     const targetState = this.config.states[target]
     if (targetState == null) {
+      return undefined
+    }
+    if (cond != null && !cond(stateObject, eventObject)) {
       return undefined
     }
     return this.toStateObject(actions != null ? { value: target, actions } : target)
