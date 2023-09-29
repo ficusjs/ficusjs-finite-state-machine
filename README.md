@@ -1,2 +1,3 @@
-# finite-state-machine
-A simple finite state machine
+# Finite state machine
+
+A simple finite state machine.
