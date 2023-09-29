@@ -197,4 +197,142 @@ describe('state-machine', () => {
     expect(service.state).toMatchObject({ value: 'B', actions: expect.any(Function) })
     expect(transitionAction).toHaveBeenCalledTimes(1)
   })
+
+  it('should execute transition actions defined as strings', () => {
+    const transitionAction = jest.fn()
+    const options = {
+      actions: {
+        transitionAction
+      }
+    }
+    const config = {
+      initial: 'A',
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              target: 'B',
+              actions: 'transitionAction'
+            }
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'A'
+          }
+        }
+      }
+    }
+    const machine = createStateMachine(config)
+    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'A' })
+    service.send('NEXT')
+    expect(service.state).toMatchObject({ value: 'B', actions: 'transitionAction' })
+    expect(transitionAction).toHaveBeenCalledTimes(1)
+  })
+
+  it('should execute many transition action functions', () => {
+    const transitionAction1 = jest.fn()
+    const transitionAction2 = jest.fn()
+    const config = {
+      initial: 'A',
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              target: 'B',
+              actions: [transitionAction1, transitionAction2]
+            }
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'A'
+          }
+        }
+      }
+    }
+    const machine = createStateMachine(config)
+    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'A' })
+    service.send('NEXT')
+    expect(service.state).toMatchObject({ value: 'B', actions: expect.arrayContaining([transitionAction1, transitionAction2]) })
+    expect(transitionAction1).toHaveBeenCalledTimes(1)
+    expect(transitionAction2).toHaveBeenCalledTimes(1)
+  })
+
+  it('should execute many transition action functions defined as strings', () => {
+    const transitionAction1 = jest.fn()
+    const transitionAction2 = jest.fn()
+    const options = {
+      actions: {
+        transitionAction1,
+        transitionAction2
+      }
+    }
+    const config = {
+      initial: 'A',
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              target: 'B',
+              actions: ['transitionAction1', 'transitionAction2']
+            }
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'A'
+          }
+        }
+      }
+    }
+    const machine = createStateMachine(config)
+    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'A' })
+    service.send('NEXT')
+    expect(service.state).toMatchObject({ value: 'B', actions: expect.arrayContaining(['transitionAction1', 'transitionAction2']) })
+    expect(transitionAction1).toHaveBeenCalledTimes(1)
+    expect(transitionAction2).toHaveBeenCalledTimes(1)
+  })
+
+  it('should execute many transition action functions defined as strings and functions', () => {
+    const transitionAction1 = jest.fn()
+    const transitionAction2 = jest.fn()
+    const options = {
+      actions: {
+        transitionAction1
+      }
+    }
+    const config = {
+      initial: 'A',
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              target: 'B',
+              actions: ['transitionAction1', transitionAction2]
+            }
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'A'
+          }
+        }
+      }
+    }
+    const machine = createStateMachine(config)
+    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'A' })
+    service.send('NEXT')
+    expect(service.state).toMatchObject({ value: 'B', actions: expect.arrayContaining(['transitionAction1', transitionAction2]) })
+    expect(transitionAction1).toHaveBeenCalledTimes(1)
+    expect(transitionAction2).toHaveBeenCalledTimes(1)
+  })
 })

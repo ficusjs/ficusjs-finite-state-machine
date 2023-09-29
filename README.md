@@ -11,7 +11,7 @@ A simple finite state machine.
 - [x] Self transitions
 - [x] Trigger transitions with string
 - [x] Trigger transitions with object
-- [ ] Transition actions
+- [x] Transition actions
 - [ ] Context
 - [ ] Guards
 - [x] Entry and exit actions
