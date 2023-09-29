@@ -388,4 +388,103 @@ describe('state-machine', () => {
     expect(machine.exitActions('A')).toEqual(config.states.A.exit)
     expect(machine.exitActions('B')).toEqual(config.states.B.exit)
   })
+
+  it('should return actions as strings', () => {
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          entry: 'A-entry',
+          exit: 'A-exit',
+          on: {
+            NEXT: {
+              target: 'B',
+              actions: 'A-NEXT'
+            }
+          }
+        },
+        B: {
+          entry: 'B-entry',
+          exit: 'B-exit'
+        }
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.entryActions('A')).toEqual('A-entry')
+    expect(machine.entryActions('B')).toEqual('B-entry')
+    expect(machine.exitActions('A')).toEqual('A-exit')
+    expect(machine.exitActions('B')).toEqual('B-exit')
+    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B' })
+    expect(machine.transition('B', 'NEXT')).toBeUndefined()
+  })
+
+  it('should return actions as functions', () => {
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          entry: () => {},
+          exit: () => {},
+          on: {
+            NEXT: {
+              target: 'B',
+              actions: () => {}
+            }
+          }
+        },
+        B: {
+          entry: () => {},
+          exit: () => {}
+        }
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.entryActions('A')).toEqual(config.states.A.entry)
+    expect(machine.entryActions('B')).toEqual(config.states.B.entry)
+    expect(machine.exitActions('A')).toEqual(config.states.A.exit)
+    expect(machine.exitActions('B')).toEqual(config.states.B.exit)
+    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B' })
+    expect(machine.transition('B', 'NEXT')).toBeUndefined()
+  })
+
+  it('should return actions as array of strings and functions', () => {
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          entry: [
+            'A-entry-1',
+            () => {}
+          ],
+          exit: [
+            'A-exit-1',
+            () => {}
+          ],
+          on: {
+            NEXT: {
+              target: 'B',
+              actions: [
+                'A-NEXT-1',
+                () => {}
+              ]
+            }
+          }
+        },
+        B: {
+          entry: [
+            'B-entry-1',
+            () => {}
+          ],
+          exit: [
+            'B-exit-1',
+            () => {}
+          ]
+        }
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.entryActions('A')).toEqual(config.states.A.entry)
+    expect(machine.entryActions('B')).toEqual(config.states.B.entry)
+    expect(machine.exitActions('A')).toEqual(config.states.A.exit)
+    expect(machine.exitActions('B')).toEqual(config.states.B.exit)
+    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B' })
+    expect(machine.transition('B', 'NEXT')).toBeUndefined()
+  })
 })

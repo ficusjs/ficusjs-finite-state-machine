@@ -40,17 +40,17 @@ class StateMachine<TEvent extends EventObject, TState extends Typestate> impleme
     if (transition == null) {
       return undefined
     }
-    const { target } = typeof transition === 'string'
-      ? { target: transition }
+    const { target, actions } = typeof transition === 'string'
+      ? { target: transition, actions: undefined }
       : transition
     if (target == null) {
       return undefined
     }
-    const nextState = this.config.states[target]
-    if (nextState == null) {
+    const targetState = this.config.states[target]
+    if (targetState == null) {
       return undefined
     }
-    return this.toStateObject(target)
+    return this.toStateObject(actions != null ? { value: target, actions } : target)
   }
 
   exitActions (state: TState['value'] | State<TEvent, TState>): Actions<TEvent> {

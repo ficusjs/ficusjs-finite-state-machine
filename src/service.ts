@@ -25,6 +25,7 @@ class StateMachineService<TEvent extends EventObject, TState extends Typestate> 
       this.executeActions(this.machine.exitActions(this.currentState))
       this.currentState = nextState
       this.executeActions(this.machine.entryActions(nextState))
+      this.executeActions(nextState.actions)
       this.notifyListeners()
     }
   }

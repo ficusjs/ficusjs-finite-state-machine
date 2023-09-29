@@ -46,15 +46,15 @@ describe('state-machine', () => {
     const machine = createStateMachine(config)
     const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
     service.start()
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'B' })
+    expect(service.state).toMatchObject({ value: 'B' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'C' })
+    expect(service.state).toMatchObject({ value: 'C' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'D' })
+    expect(service.state).toMatchObject({ value: 'D' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
   })
 
   it('should notify on state change', () => {
@@ -63,9 +63,9 @@ describe('state-machine', () => {
     const listener = jest.fn()
     service.subscribe(listener)
     service.start()
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'B' })
+    expect(service.state).toMatchObject({ value: 'B' })
     expect(listener).toHaveBeenCalledTimes(1)
   })
 
@@ -75,13 +75,13 @@ describe('state-machine', () => {
     const listener = jest.fn()
     const subscription = service.subscribe(listener)
     service.start()
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'B' })
+    expect(service.state).toMatchObject({ value: 'B' })
     expect(listener).toHaveBeenCalledTimes(1)
     subscription.unsubscribe()
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'C' })
+    expect(service.state).toMatchObject({ value: 'C' })
     expect(listener).toHaveBeenCalledTimes(1)
   })
 
@@ -91,13 +91,13 @@ describe('state-machine', () => {
     const listener = jest.fn()
     service.subscribe(listener)
     service.start()
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'B' })
+    expect(service.state).toMatchObject({ value: 'B' })
     expect(listener).toHaveBeenCalledTimes(1)
     service.stop()
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'B' })
+    expect(service.state).toMatchObject({ value: 'B' })
     expect(listener).toHaveBeenCalledTimes(1)
   })
 
@@ -107,7 +107,7 @@ describe('state-machine', () => {
     const entryAction = jest.fn()
     config.states.A.entry = entryAction
     service.start()
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
     expect(entryAction).toHaveBeenCalledTimes(1)
   })
 
@@ -122,7 +122,7 @@ describe('state-machine', () => {
     const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
     config.states.A.entry = 'entryAction'
     service.start()
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
     expect(entryAction).toHaveBeenCalledTimes(1)
   })
 
@@ -132,9 +132,9 @@ describe('state-machine', () => {
     const exitAction = jest.fn()
     config.states.A.exit = exitAction
     service.start()
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'B' })
+    expect(service.state).toMatchObject({ value: 'B' })
     expect(exitAction).toHaveBeenCalledTimes(1)
   })
 
@@ -149,9 +149,9 @@ describe('state-machine', () => {
     const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
     config.states.A.exit = 'exitAction'
     service.start()
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'B' })
+    expect(service.state).toMatchObject({ value: 'B' })
     expect(exitAction).toHaveBeenCalledTimes(1)
   })
 
@@ -163,9 +163,38 @@ describe('state-machine', () => {
       exitState = service.state
     }
     service.start()
-    expect(service.state).toEqual({ value: 'A' })
+    expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
-    expect(service.state).toEqual({ value: 'B' })
+    expect(service.state).toMatchObject({ value: 'B' })
     expect(exitState.value).toEqual('A')
+  })
+
+  it('should execute transition actions', () => {
+    const transitionAction = jest.fn()
+    const config = {
+      initial: 'A',
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              target: 'B',
+              actions: transitionAction
+            }
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'A'
+          }
+        }
+      }
+    }
+    const machine = createStateMachine(config)
+    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'A' })
+    service.send('NEXT')
+    expect(service.state).toMatchObject({ value: 'B', actions: expect.any(Function) })
+    expect(transitionAction).toHaveBeenCalledTimes(1)
   })
 })
