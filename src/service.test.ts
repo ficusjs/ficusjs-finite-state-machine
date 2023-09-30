@@ -198,6 +198,29 @@ describe('state-machine', () => {
     expect(transitionAction).toHaveBeenCalledTimes(1)
   })
 
+  it('should execute self transition actions', () => {
+    const transitionAction = jest.fn()
+    const config = {
+      initial: 'A',
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              actions: transitionAction
+            }
+          }
+        }
+      }
+    }
+    const machine = createStateMachine(config)
+    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'A' })
+    service.send('NEXT')
+    expect(service.state).toMatchObject({ value: 'A', actions: expect.any(Function) })
+    expect(transitionAction).toHaveBeenCalledTimes(1)
+  })
+
   it('should execute transition actions defined as strings', () => {
     const transitionAction = jest.fn()
     const options = {
