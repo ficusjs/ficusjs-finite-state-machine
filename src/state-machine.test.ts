@@ -74,49 +74,6 @@ describe('state-machine', () => {
     expect(machine.transition(machine.initialState, 'NEXT')).toBeUndefined()
   })
 
-  it('should not transition when the event is not defined', () => {
-    const config: StateMachineConfig<TestEvent, TestState> = {
-      states: {
-        A: {
-          on: {}
-        },
-        B: {}
-      }
-    }
-    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
-    expect(machine.initialState).toMatchObject({ value: 'A' })
-    expect(machine.transition(machine.initialState, 'NEXT')).toBeUndefined()
-  })
-
-  it('should not transition given an invalid state', () => {
-    const config: StateMachineConfig<TestEvent, TestState> = {
-      states: {
-        A: {
-          on: {
-            NEXT: 'B'
-          }
-        }
-      }
-    }
-    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
-    expect(machine.transition('D', 'NEXT')).toBeUndefined()
-  })
-
-  it('should not transition when state is not defined', () => {
-    const config: StateMachineConfig<TestEvent, TestState> = {
-      states: {
-        A: {
-          on: {
-            NEXT: 'B'
-          }
-        }
-      }
-    }
-    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
-    expect(machine.initialState).toMatchObject({ value: 'A' })
-    expect(machine.transition('A', 'NEXT')).toBeUndefined()
-  })
-
   it('should create a state machine given string transitions', () => {
     const config: StateMachineConfig<TestEvent, TestState> = {
       states: {
@@ -149,6 +106,49 @@ describe('state-machine', () => {
     const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
     expect(machine.initialState).toMatchObject({ value: 'A' })
     expect(machine.transition(machine.initialState, 'NEXT')).toMatchObject({ value: 'B' })
+  })
+
+  it('should not transition when the event is not defined', () => {
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          on: {}
+        },
+        B: {}
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.initialState).toMatchObject({ value: 'A' })
+    expect(machine.transition(machine.initialState, 'NEXT')).toBeUndefined()
+  })
+
+  it('should not transition given an invalid state', () => {
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          on: {
+            NEXT: 'B'
+          }
+        }
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.transition('D', 'NEXT')).toBeUndefined()
+  })
+
+  it('should not transition when the target state is not defined', () => {
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          on: {
+            NEXT: 'B'
+          }
+        }
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.initialState).toMatchObject({ value: 'A' })
+    expect(machine.transition('A', 'NEXT')).toBeUndefined()
   })
 
   it('should not transition given an empty target', () => {
@@ -393,8 +393,6 @@ describe('state-machine', () => {
     const config: StateMachineConfig<TestEvent, TestState> = {
       states: {
         A: {
-          entry: 'A-entry',
-          exit: 'A-exit',
           on: {
             NEXT: {
               target: 'B',
@@ -402,90 +400,70 @@ describe('state-machine', () => {
             }
           }
         },
-        B: {
-          entry: 'B-entry',
-          exit: 'B-exit'
+        B: {}
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B', actions: 'A-NEXT' })
+  })
+
+  it('should return actions as strings given an empty target', () => {
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              actions: 'A-NEXT'
+            }
+          }
         }
       }
     }
     const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
-    expect(machine.entryActions('A')).toEqual('A-entry')
-    expect(machine.entryActions('B')).toEqual('B-entry')
-    expect(machine.exitActions('A')).toEqual('A-exit')
-    expect(machine.exitActions('B')).toEqual('B-exit')
-    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B' })
-    expect(machine.transition('B', 'NEXT')).toBeUndefined()
+    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'A', actions: 'A-NEXT' })
   })
 
   it('should return actions as functions', () => {
+    const actions = (): void => {}
     const config: StateMachineConfig<TestEvent, TestState> = {
       states: {
         A: {
-          entry: () => {},
-          exit: () => {},
           on: {
             NEXT: {
               target: 'B',
-              actions: () => {}
+              actions
             }
           }
         },
         B: {
-          entry: () => {},
-          exit: () => {}
         }
       }
     }
     const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
-    expect(machine.entryActions('A')).toEqual(config.states.A.entry)
-    expect(machine.entryActions('B')).toEqual(config.states.B.entry)
-    expect(machine.exitActions('A')).toEqual(config.states.A.exit)
-    expect(machine.exitActions('B')).toEqual(config.states.B.exit)
-    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B' })
-    expect(machine.transition('B', 'NEXT')).toBeUndefined()
+    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B', actions })
   })
 
   it('should return actions as array of strings and functions', () => {
+    const actions = [
+      'A-NEXT-1',
+      (): void => {}
+    ]
     const config: StateMachineConfig<TestEvent, TestState> = {
       states: {
         A: {
-          entry: [
-            'A-entry-1',
-            () => {}
-          ],
-          exit: [
-            'A-exit-1',
-            () => {}
-          ],
           on: {
             NEXT: {
               target: 'B',
-              actions: [
-                'A-NEXT-1',
-                () => {}
-              ]
+              actions
             }
           }
         },
         B: {
-          entry: [
-            'B-entry-1',
-            () => {}
-          ],
-          exit: [
-            'B-exit-1',
-            () => {}
-          ]
         }
       }
     }
     const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
-    expect(machine.entryActions('A')).toEqual(config.states.A.entry)
-    expect(machine.entryActions('B')).toEqual(config.states.B.entry)
-    expect(machine.exitActions('A')).toEqual(config.states.A.exit)
-    expect(machine.exitActions('B')).toEqual(config.states.B.exit)
-    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B' })
-    expect(machine.transition('B', 'NEXT')).toBeUndefined()
+    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B', actions })
   })
 
   it('should not transition given a condition that returns false', () => {
@@ -504,5 +482,42 @@ describe('state-machine', () => {
     }
     const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
     expect(machine.transition('A', 'NEXT')).toBeUndefined()
+  })
+
+  it('should transition given a condition that returns true', () => {
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              target: 'B',
+              cond: () => true
+            }
+          }
+        },
+        B: {}
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'B' })
+  })
+
+  it('should self transition given a condition that returns true', () => {
+    const actions = (): void => {}
+    const config: StateMachineConfig<TestEvent, TestState> = {
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              actions,
+              cond: () => true
+            }
+          }
+        },
+        B: {}
+      }
+    }
+    const machine: StateMachineInterface<TestEvent, TestState> = createStateMachine(config)
+    expect(machine.transition('A', 'NEXT')).toMatchObject({ value: 'A', actions })
   })
 })
