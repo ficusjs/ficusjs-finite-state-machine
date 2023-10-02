@@ -8,28 +8,33 @@ import {
   type Typestate
 } from './state-machine-types'
 
-class StateMachine<TEvent extends EventObject, TState extends Typestate> implements StateMachineInterface<TEvent, TState> {
-  constructor (private readonly config: StateMachineConfig<TEvent, TState>) {
+class StateMachine<TContext extends object, TEvent extends EventObject, TState extends Typestate> implements StateMachineInterface<TContext, TEvent, TState> {
+  constructor (private readonly config: StateMachineConfig<TContext, TEvent, TState>) {
   }
 
-  get initialState (): State<TEvent, TState> {
-    return this.toStateObject(this.config.initial ?? Object.keys(this.config.states)[0])
+  get initialState (): State<TContext, TEvent, TState> {
+    const initial = this.config.initial ?? Object.keys(this.config.states)[0]
+    return this.toStateObject(
+      this.config.context == null
+        ? initial
+        : { value: initial, context: this.config.context }
+    )
   }
 
   private toEventObject<TEvent extends EventObject> (event: TEvent['type'] | TEvent): TEvent {
     return (typeof event === 'string' ? { type: event } : event) as TEvent
   }
 
-  private toStateObject<TState extends Typestate> (state: TState['value'] | State<TEvent, TState>): State<TEvent, TState> {
+  private toStateObject<TState extends Typestate> (state: TState['value'] | State<TContext, TEvent, TState>): State<TContext, TEvent, TState> {
     return (typeof state === 'string' ? { value: state } : state)
   }
 
-  private stateExists (state: TState['value'] | State<TEvent, TState>): boolean {
+  private stateExists (state: TState['value'] | State<TContext, TEvent, TState>): boolean {
     const stateObject = this.toStateObject(state)
     return this.config.states[stateObject.value] != null
   }
 
-  transition (state: TState['value'] | State<TEvent, TState>, event: TEvent['type'] | TEvent): State<TEvent, TState> | undefined {
+  transition (state: TState['value'] | State<TContext, TEvent, TState>, event: TEvent['type'] | TEvent): State<TContext, TEvent, TState> | undefined {
     // don't transition if the state is undefined
     if (state == null) {
       return undefined
@@ -56,7 +61,7 @@ class StateMachine<TEvent extends EventObject, TState extends Typestate> impleme
     }
 
     // create the next transition object
-    const nextTransition: TransitionObject<TEvent, TState> = {
+    const nextTransition: TransitionObject<TContext, TEvent, TState> = {
       target: stateObject.value, // default to self-transition
       actions: undefined,
       cond: undefined
@@ -85,7 +90,7 @@ class StateMachine<TEvent extends EventObject, TState extends Typestate> impleme
     }
 
     // create the next state object
-    const nextStateObject = this.toStateObject({ value: nextTransition.target, actions: nextTransition.actions })
+    const nextStateObject = this.toStateObject({ value: nextTransition.target, actions: nextTransition.actions, context: stateObject.context })
 
     // don't transition if the condition is not met
     if (nextTransition.cond != null && !nextTransition.cond(stateObject, eventObject)) {
@@ -94,20 +99,21 @@ class StateMachine<TEvent extends EventObject, TState extends Typestate> impleme
     return nextStateObject
   }
 
-  exitActions (state: TState['value'] | State<TEvent, TState>): Actions<TEvent> {
+  exitActions (state: TState['value'] | State<TContext, TEvent, TState>): Actions<TContext, TEvent> {
     const stateObject = this.toStateObject(state)
     return this.config.states[stateObject.value].exit ?? []
   }
 
-  entryActions (state: TState['value'] | State<TEvent, TState>): Actions<TEvent> {
+  entryActions (state: TState['value'] | State<TContext, TEvent, TState>): Actions<TContext, TEvent> {
     const stateObject = this.toStateObject(state)
     return this.config.states[stateObject.value].entry ?? []
   }
 }
 
-export function createStateMachine<
+export function createMachine<
+  TContext extends object,
   TEvent extends EventObject,
   TState extends Typestate
-> (config: StateMachineConfig<TEvent, TState>): StateMachineInterface<TEvent, TState> {
+> (config: StateMachineConfig<TContext, TEvent, TState>): StateMachineInterface<TContext, TEvent, TState> {
   return new StateMachine(config)
 }

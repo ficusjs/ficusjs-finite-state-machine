@@ -1,8 +1,12 @@
 import { beforeEach, describe, it } from '@jest/globals'
-import { createStateMachineService } from './service'
-import { createStateMachine } from './state-machine'
-import { type StateMachineConfig } from './state-machine-types'
+import { assign, interpret } from './service'
+import { createMachine } from './state-machine'
+import { type EventObject, type StateMachineConfig, type Typestate } from './state-machine-types'
 import { type StateMachineServiceInterface } from './service-types'
+
+interface TestContext {
+  test: string
+}
 
 interface TestState {
   value: string
@@ -13,7 +17,7 @@ interface TestEvent {
 }
 
 describe('state-machine', () => {
-  let config: StateMachineConfig<TestEvent, TestState>
+  let config: StateMachineConfig<TestContext, TestEvent, TestState>
   beforeEach(() => {
     config = {
       initial: 'A',
@@ -43,8 +47,8 @@ describe('state-machine', () => {
   })
 
   it('should create a state machine service', () => {
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
@@ -58,8 +62,8 @@ describe('state-machine', () => {
   })
 
   it('should notify on state change', () => {
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
     const listener = jest.fn()
     service.subscribe(listener)
     service.start()
@@ -70,8 +74,8 @@ describe('state-machine', () => {
   })
 
   it('should unsubscribe from state change', () => {
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
     const listener = jest.fn()
     const subscription = service.subscribe(listener)
     service.start()
@@ -86,8 +90,8 @@ describe('state-machine', () => {
   })
 
   it('should stop notifying when the state machine has stopped', () => {
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
     const listener = jest.fn()
     service.subscribe(listener)
     service.start()
@@ -102,8 +106,8 @@ describe('state-machine', () => {
   })
 
   it('should execute entry actions', () => {
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
     const entryAction = jest.fn()
     config.states.A.entry = entryAction
     service.start()
@@ -112,14 +116,14 @@ describe('state-machine', () => {
   })
 
   it('should execute entry actions defined as strings', () => {
-    const machine = createStateMachine(config)
+    const machine = createMachine(config)
     const entryAction = jest.fn()
     const options = {
       actions: {
         entryAction
       }
     }
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine, options)
     config.states.A.entry = 'entryAction'
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
@@ -127,8 +131,8 @@ describe('state-machine', () => {
   })
 
   it('should execute exit actions', () => {
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
     const exitAction = jest.fn()
     config.states.A.exit = exitAction
     service.start()
@@ -139,14 +143,14 @@ describe('state-machine', () => {
   })
 
   it('should execute exit actions defined as strings', () => {
-    const machine = createStateMachine(config)
+    const machine = createMachine(config)
     const exitAction = jest.fn()
     const options = {
       actions: {
         exitAction
       }
     }
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine, options)
     config.states.A.exit = 'exitAction'
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
@@ -156,8 +160,8 @@ describe('state-machine', () => {
   })
 
   it('should execute exit actions before state change', () => {
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
     let exitState = { value: 'none' }
     config.states.A.exit = (): void => {
       exitState = service.state
@@ -189,8 +193,8 @@ describe('state-machine', () => {
         }
       }
     }
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<object, EventObject, Typestate> = interpret(machine)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
@@ -212,8 +216,8 @@ describe('state-machine', () => {
         }
       }
     }
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<object, EventObject, Typestate> = interpret(machine)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
@@ -246,8 +250,8 @@ describe('state-machine', () => {
         }
       }
     }
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<object, EventObject, Typestate> = interpret(machine, options)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
@@ -276,8 +280,8 @@ describe('state-machine', () => {
         }
       }
     }
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<object, EventObject, Typestate> = interpret(machine)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
@@ -313,8 +317,8 @@ describe('state-machine', () => {
         }
       }
     }
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<object, EventObject, Typestate> = interpret(machine, options)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
@@ -349,13 +353,49 @@ describe('state-machine', () => {
         }
       }
     }
-    const machine = createStateMachine(config)
-    const service: StateMachineServiceInterface<TestEvent, TestState> = createStateMachineService(machine, options)
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<object, EventObject, Typestate> = interpret(machine, options)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
     service.send('NEXT')
     expect(service.state).toMatchObject({ value: 'B', actions: expect.arrayContaining(['transitionAction1', transitionAction2]) })
     expect(transitionAction1).toHaveBeenCalledTimes(1)
     expect(transitionAction2).toHaveBeenCalledTimes(1)
+  })
+
+  it('should assign context', () => {
+    const machine = createMachine({
+      initial: 'A',
+      context: {
+        test: 'hello'
+      },
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              target: 'B',
+              actions: 'updateTest'
+            }
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'A'
+          }
+        }
+      }
+    })
+    const options = {
+      actions: {
+        updateTest: () => assign({
+          test: 'world'
+        })
+      }
+    }
+    const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine, options)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'A', context: { test: 'hello' } })
+    service.send('NEXT')
+    expect(service.state).toMatchObject({ value: 'B', context: { test: 'world' } })
   })
 })

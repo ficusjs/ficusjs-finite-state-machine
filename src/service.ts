@@ -1,18 +1,27 @@
-import { type EventObject, type State, type StateMachineInterface, type Typestate } from './state-machine-types'
+import {
+  type ActionFunction, type AssignActionFunction,
+  type AssignmentObject,
+  type EventObject,
+  type State,
+  type StateMachineInterface,
+  type Typestate
+} from './state-machine-types'
 import { type ServiceOptions, ServiceStatus, type StateMachineServiceInterface } from './service-types'
 import { toArray } from './util/to-array'
 
-class StateMachineService<TEvent extends EventObject, TState extends Typestate> implements StateMachineServiceInterface<TEvent, TState> {
+export const ASSIGN_ACTION_TYPE = 'assignment'
+
+class StateMachineService<TContext extends object, TEvent extends EventObject, TState extends Typestate> implements StateMachineServiceInterface<TContext, TEvent, TState> {
   private status: ServiceStatus
-  private currentState: State<TEvent, TState>
+  private currentState: State<TContext, TEvent, TState>
   private readonly listeners: any[] = []
 
-  constructor (private readonly machine: StateMachineInterface<TEvent, TState>, private readonly options?: ServiceOptions<TEvent>) {
+  constructor (private readonly machine: StateMachineInterface<TContext, TEvent, TState>, private readonly options?: ServiceOptions<TContext, TEvent>) {
     this.status = ServiceStatus.Stopped
     this.currentState = this.machine.initialState
   }
 
-  get state (): State<TEvent, TState> {
+  get state (): State<TContext, TEvent, TState> {
     return this.currentState
   }
 
@@ -21,12 +30,17 @@ class StateMachineService<TEvent extends EventObject, TState extends Typestate> 
       return
     }
     const nextState = this.machine.transition(this.currentState, event)
-    if (nextState != null && nextState !== this.currentState) {
-      this.executeActions(this.machine.exitActions(this.currentState))
-      this.currentState = nextState
-      this.executeActions(this.machine.entryActions(nextState))
-      this.executeActions(nextState.actions)
-      this.notifyListeners()
+    if (nextState != null) {
+      if (nextState.value !== this.currentState.value) {
+        this.executeActions(this.machine.exitActions(this.currentState), event, nextState.context)
+        this.currentState = nextState
+        this.executeActions(this.machine.entryActions(nextState), event, nextState.context)
+        this.executeActions(nextState.actions, event, nextState.context)
+        this.notifyListeners()
+      } else {
+        this.currentState = nextState
+        this.executeActions(nextState.actions, event, nextState.context)
+      }
     }
   }
 
@@ -50,23 +64,37 @@ class StateMachineService<TEvent extends EventObject, TState extends Typestate> 
     this.listeners.forEach((listener) => listener(this.state))
   }
 
-  private executeActions<TAction> (actions: TAction): void {
+  private executeActions<TAction> (actions: TAction, event?: TEvent['type'] | TEvent, context?: TContext): void {
     toArray(actions).forEach((action) => {
-      if (typeof action === 'function') {
-        action()
+      let actionFunc: ActionFunction<TContext, TEvent> | AssignActionFunction<TContext, TEvent>
+      if (typeof action === 'string') {
+        actionFunc = this.options?.actions?.[action as string] as ActionFunction<TContext, TEvent>
       } else {
-        const actionFn = this.options?.actions?.[action as string]
-        if (actionFn != null) {
-          actionFn()
+        actionFunc = action as ActionFunction<TContext, TEvent> | AssignActionFunction<TContext, TEvent>
+      }
+      if (actionFunc != null) {
+        const actionResult = actionFunc(context, event)
+        if (actionResult != null && typeof actionResult === 'object' && actionResult.type === ASSIGN_ACTION_TYPE && context != null) {
+          this.currentState.context = actionResult.assignment(context)
         }
       }
     })
   }
 }
 
-export function createStateMachineService<
+export function interpret<
+  TContext extends object,
   TEvent extends EventObject,
   TState extends Typestate
-> (machine: StateMachineInterface<TEvent, TState>, options?: ServiceOptions<TEvent>): StateMachineServiceInterface<TEvent, TState> {
+> (machine: StateMachineInterface<TContext, TEvent, TState>, options?: ServiceOptions<TContext, TEvent>): StateMachineServiceInterface<TContext, TEvent, TState> {
   return new StateMachineService(machine, options)
+}
+
+export function assign<
+  TContext extends object,
+> (assigner: Partial<TContext>): AssignmentObject<TContext> {
+  return {
+    type: ASSIGN_ACTION_TYPE,
+    assignment: (context: TContext) => Object.assign({}, context, assigner)
+  }
 }
