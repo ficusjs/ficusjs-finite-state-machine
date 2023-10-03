@@ -5,10 +5,10 @@ import {
   type StateMachineConfig,
   type StateMachineInterface,
   type TransitionObject,
-  type Typestate
+  type TypeState
 } from './state-machine-types'
 
-class StateMachine<TContext extends object, TEvent extends EventObject, TState extends Typestate> implements StateMachineInterface<TContext, TEvent, TState> {
+class StateMachine<TContext extends object, TEvent extends EventObject, TState extends TypeState> implements StateMachineInterface<TContext, TEvent, TState> {
   constructor (private readonly config: StateMachineConfig<TContext, TEvent, TState>) {
   }
 
@@ -25,8 +25,27 @@ class StateMachine<TContext extends object, TEvent extends EventObject, TState e
     return (typeof event === 'string' ? { type: event } : event) as TEvent
   }
 
-  private toStateObject<TState extends Typestate> (state: TState['value'] | State<TContext, TEvent, TState>): State<TContext, TEvent, TState> {
-    return (typeof state === 'string' ? { value: state } : state)
+  private toStateObject<TState extends TypeState> (state: TState['value'] | Partial<State<TContext, TEvent, TState>>): State<TContext, TEvent, TState> {
+    const stateObject: State<TContext, TEvent, TState> = {
+      value: (typeof state === 'string' ? state : state?.value) as TState['value'],
+      changed: false,
+      matches: function (value: TState['value'] | RegExp): boolean {
+        if (value instanceof RegExp) {
+          return value.test(this.value)
+        }
+        return this.value === value
+      }
+    }
+    if (typeof state !== 'string' && state?.actions != null) {
+      stateObject.actions = state.actions
+    }
+    if (typeof state !== 'string' && state?.context != null) {
+      stateObject.context = state.context
+    }
+    if (typeof state !== 'string' && state?.changed != null) {
+      stateObject.changed = state.changed
+    }
+    return stateObject
   }
 
   private stateExists (state: TState['value'] | State<TContext, TEvent, TState>): boolean {
@@ -90,7 +109,12 @@ class StateMachine<TContext extends object, TEvent extends EventObject, TState e
     }
 
     // create the next state object
-    const nextStateObject = this.toStateObject({ value: nextTransition.target, actions: nextTransition.actions, context: stateObject.context })
+    const nextStateObject = this.toStateObject({
+      value: nextTransition.target,
+      actions: nextTransition.actions,
+      context: stateObject.context,
+      changed: nextTransition.target !== stateObject.value
+    })
 
     // don't transition if the condition is not met
     if (nextTransition.cond != null && !nextTransition.cond(stateObject, eventObject)) {
@@ -113,7 +137,7 @@ class StateMachine<TContext extends object, TEvent extends EventObject, TState e
 export function createMachine<
   TContext extends object,
   TEvent extends EventObject,
-  TState extends Typestate
+  TState extends TypeState
 > (config: StateMachineConfig<TContext, TEvent, TState>): StateMachineInterface<TContext, TEvent, TState> {
   return new StateMachine(config)
 }

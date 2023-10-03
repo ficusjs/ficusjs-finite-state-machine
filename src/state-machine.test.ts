@@ -32,7 +32,7 @@ describe('state-machine', () => {
       }
     }
     const machine: StateMachineInterface<TestContext, TestEvent, TestState> = createMachine(config)
-    expect(machine.initialState).toEqual({ value: 'A' })
+    expect(machine.initialState).toMatchObject({ value: 'A', matches: expect.any(Function) })
     expect(machine.transition(machine.initialState, 'NEXT')).toMatchObject({ value: 'B' })
   })
 
@@ -62,7 +62,7 @@ describe('state-machine', () => {
       states: {}
     }
     const machine: StateMachineInterface<TestContext, TestEvent, TestState> = createMachine(config)
-    expect(machine.initialState).toBeUndefined()
+    expect(machine.initialState.value).toBeUndefined()
     expect(machine.transition(machine.initialState, 'NEXT')).toBeUndefined()
   })
 
@@ -124,6 +124,15 @@ describe('state-machine', () => {
     const machine: StateMachineInterface<TestContext, TestEvent, TestState> = createMachine(config)
     expect(machine.initialState).toMatchObject({ value: 'A' })
     expect(machine.transition(machine.initialState, 'NEXT')).toBeUndefined()
+  })
+
+  it('should not transition given a null state', () => {
+    const config: StateMachineConfig<TestContext, TestEvent, TestState> = {
+      states: {}
+    }
+    const machine: StateMachineInterface<TestContext, TestEvent, TestState> = createMachine(config)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(machine.transition(null!, 'NEXT')).toBeUndefined()
   })
 
   it('should not transition given an invalid state', () => {
@@ -547,5 +556,57 @@ describe('state-machine', () => {
     const machine: StateMachineInterface<TestContext, TestEvent, TestState> = createMachine(config)
     expect(machine.initialState).toMatchObject({ value: 'A', context: { test: 'test' } })
     expect(machine.transition(machine.initialState, 'NEXT')).toMatchObject({ value: 'B', context: { test: 'test' } })
+  })
+
+  it('should return state changed', () => {
+    const config: StateMachineConfig<TestContext, TestEvent, TestState> = {
+      initial: 'A',
+      context: {
+        test: 'test'
+      },
+      states: {
+        A: {
+          on: {
+            NEXT: 'B'
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'A'
+          }
+        }
+      }
+    }
+    const machine: StateMachineInterface<TestContext, TestEvent, TestState> = createMachine(config)
+    expect(machine.initialState).toMatchObject({ value: 'A', changed: false })
+    expect(machine.transition(machine.initialState, 'NEXT')).toMatchObject({ value: 'B', changed: true })
+  })
+
+  it('should return state matches', () => {
+    const config: StateMachineConfig<TestContext, TestEvent, TestState> = {
+      initial: 'A',
+      context: {
+        test: 'test'
+      },
+      states: {
+        A: {
+          on: {
+            NEXT: 'B'
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'A'
+          }
+        }
+      }
+    }
+    const machine: StateMachineInterface<TestContext, TestEvent, TestState> = createMachine(config)
+    const state = machine.transition(machine.initialState, 'NEXT')
+    expect(state).toMatchObject({ value: 'B', matches: expect.any(Function) })
+    expect(state?.matches('B')).toBe(true)
+    expect(state?.matches('A')).toBe(false)
+    expect(state?.matches(/B/)).toBe(true)
+    expect(state?.matches(/A/)).toBe(false)
   })
 })

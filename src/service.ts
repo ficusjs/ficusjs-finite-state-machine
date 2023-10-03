@@ -4,14 +4,14 @@ import {
   type EventObject,
   type State,
   type StateMachineInterface,
-  type Typestate
+  type TypeState
 } from './state-machine-types'
 import { type ServiceOptions, ServiceStatus, type StateMachineServiceInterface } from './service-types'
 import { toArray } from './util/to-array'
 
 export const ASSIGN_ACTION_TYPE = 'assignment'
 
-class StateMachineService<TContext extends object, TEvent extends EventObject, TState extends Typestate> implements StateMachineServiceInterface<TContext, TEvent, TState> {
+class StateMachineService<TContext extends object, TEvent extends EventObject, TState extends TypeState> implements StateMachineServiceInterface<TContext, TEvent, TState> {
   private status: ServiceStatus
   private currentState: State<TContext, TEvent, TState>
   private readonly listeners: any[] = []
@@ -40,6 +40,9 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
       } else {
         this.currentState = nextState
         this.executeActions(nextState.actions, event, nextState.context)
+        if (nextState.changed === true) {
+          this.notifyListeners()
+        }
       }
     }
   }
@@ -76,6 +79,7 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
         const actionResult = actionFunc(context, event)
         if (actionResult != null && typeof actionResult === 'object' && actionResult.type === ASSIGN_ACTION_TYPE && context != null) {
           this.currentState.context = actionResult.assignment(context)
+          this.currentState.changed = true
         }
       }
     })
@@ -85,7 +89,7 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
 export function interpret<
   TContext extends object,
   TEvent extends EventObject,
-  TState extends Typestate
+  TState extends TypeState
 > (machine: StateMachineInterface<TContext, TEvent, TState>, options?: ServiceOptions<TContext, TEvent>): StateMachineServiceInterface<TContext, TEvent, TState> {
   return new StateMachineService(machine, options)
 }

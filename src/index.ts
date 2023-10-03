@@ -2,7 +2,7 @@ import {
   type EventObject,
   type StateMachineConfig,
   type StateMachineInterface,
-  type Typestate
+  type TypeState
 } from './state-machine-types'
 import { type ServiceOptions, type StateMachineServiceInterface } from './service-types'
 import { interpret } from './service'
@@ -17,7 +17,7 @@ declare global {
 function createMachineService<
   TContext extends object,
   TEvent extends EventObject,
-  TState extends Typestate
+  TState extends TypeState
 > (
   key: string,
   machine: StateMachineInterface<TContext, TEvent, TState>,
@@ -40,7 +40,7 @@ function createMachineService<
 function getMachineService<
   TContext extends object,
   TEvent extends EventObject,
-  TState extends Typestate
+  TState extends TypeState
 > (key: string): StateMachineServiceInterface<TContext, TEvent, TState> | undefined {
   return window.__ficusjs__.stateMachine[key]
 }
@@ -50,7 +50,7 @@ export {
   type StateMachineConfig,
   type StateMachineInterface,
   type StateMachineServiceInterface,
-  type Typestate,
+  type TypeState,
   createMachine,
   createMachineService,
   getMachineService,

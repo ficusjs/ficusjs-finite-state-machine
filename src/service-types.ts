@@ -3,7 +3,7 @@ import {
   type AssignActionFunction,
   type EventObject,
   type State,
-  type Typestate
+  type TypeState
 } from './state-machine-types'
 
 export enum ServiceStatus {
@@ -15,7 +15,7 @@ export interface ServiceOptions<TContext extends object, TEvent extends EventObj
   actions?: Record<string, ActionFunction<TContext, TEvent> | AssignActionFunction<TContext, TEvent>>
 }
 
-export interface StateMachineServiceInterface<TContext extends object, TEvent extends EventObject, TState extends Typestate> {
+export interface StateMachineServiceInterface<TContext extends object, TEvent extends EventObject, TState extends TypeState> {
   state: State<TContext, TEvent, TState>
   send: (event: TEvent['type'] | TEvent) => void
   subscribe: (listener: any) => { unsubscribe: () => void }
