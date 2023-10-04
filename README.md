@@ -96,7 +96,7 @@ const lightMachine = createMachine({
   }
 })
 
-const service = interpret(lightMachine)
+const service = createMachineService('lights', lightMachine)
   .subscribe((state) => {
     console.log(state.value);
   })
