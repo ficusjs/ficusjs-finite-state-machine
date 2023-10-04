@@ -1,21 +1,38 @@
 {
-  "name": "finite-state-machine",
+  "name": "@ficusjs/finite-state-machine",
   "version": "1.0.0",
   "description": "Finite State Machine in TypeScript",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "type": "module",
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
   "scripts": {
     "build": "run-s build:*",
-    "build:ts": "rollup -i src/index.ts -o dist/index.js -f es -p \"typescript={}\" -p \"terser={}\" -p \"filesize={}\"",
+    "build:ts": "rollup -i src/index.ts -o dist/index.mjs -f es -p \"typescript={}\" -p \"terser={}\" -p \"filesize={}\"",
     "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outDir tmp && rollup -i tmp/index.d.ts -o dist/index.d.ts -f es -p \"dts={}\"",
     "lint": "ts-standard && tsc -p tsconfig.eslint.json --noEmit",
     "lint:fix": "ts-standard --fix",
     "test": "jest",
     "test:coverage": "jest --coverage"
   },
-  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ficusjs/ficusjs-finite-state-machine.git"
+  },
+  "keywords": [
+    "ficusjs",
+    "frontend",
+    "state",
+    "state-machine",
+    "xstate"
+  ],
   "author": "Matt Levy",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ficusjs/ficusjs-finite-state-machine/issues"
+  },
+  "homepage": "https://github.com/ficusjs/ficusjs-finite-state-machine#readme",
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@rollup/plugin-terser": "^0.4.3",
@@ -47,6 +64,11 @@
           "tsconfig": "tsconfig.eslint.json"
         }
       ]
+    }
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs"
     }
   }
 }

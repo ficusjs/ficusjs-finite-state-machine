@@ -5,7 +5,7 @@ import {
   type TypeState
 } from './state-machine-types'
 import { type ServiceOptions, type StateMachineServiceInterface } from './service-types'
-import { interpret } from './service'
+import { assign, interpret } from './service'
 import { createMachine } from './state-machine'
 
 declare global {
@@ -51,6 +51,7 @@ export {
   type StateMachineInterface,
   type StateMachineServiceInterface,
   type TypeState,
+  assign,
   createMachine,
   createMachineService,
   getMachineService,
