@@ -37,10 +37,10 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
     }
     if (this.currentTimer != null) {
       clearTimeout(this.currentTimer)
-      this.currentTimer = -1
+      this.currentTimer = null
     }
     if (after != null) {
-      this.currentTimer = window.setTimeout(() => {
+      this.currentTimer = setTimeout(() => {
         this.send(event)
       }, after)
       return
