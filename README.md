@@ -3,6 +3,17 @@
 A lightweight finite state machine library.
 It is inspired by the [@xstate/fsm](https://xstate.js.org/docs/packages/xstate-fsm/) library.
 
+**Why choose this library over `@xstate/fsm`?**
+
+- You want a lightweight library (1.5KB minified + gzipped)
+- State machine services can be retrieved and used in components
+- Exit actions are executed before state changes
+- Entry actions are executed after state changes
+- Guards can be async functions
+- Transitions can be delayed
+- `@xstate/fsm` is now deprecated
+- More features will be added in the future...
+
 ## What is a finite state machine?
 
 A finite state machine is a finite set of states that can transition to each other deterministically due to events.
@@ -23,15 +34,18 @@ The service takes care of:
 - [x] State machine service (running state machine)
 - [x] Subscription to state changes
 - [x] Transitions
+- [x] Async transitions
 - [x] Self transitions
 - [x] Trigger transitions with string
 - [x] Trigger transitions with object
 - [x] Transition actions
 - [x] Context
 - [x] Guards
+- [ ] Async guards
 - [x] Entry and exit actions
 - [x] Timer transitions
 - [x] Dynamic conditional transitions
+- [ ] Delayed actions
 
 ## Installation
 

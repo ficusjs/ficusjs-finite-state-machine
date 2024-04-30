@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest'
-import { assign, interpret } from './service'
+import { assign, interpret, send } from './service'
 import { createMachine } from './state-machine'
 import { type EventObject, type StateMachineConfig, type TypeState } from './state-machine-types'
 import { type StateMachineServiceInterface } from './service-types'
@@ -435,5 +435,120 @@ describe('state-machine', () => {
     expect(service.state).toMatchObject({ value: 'A', context: { test: 'hello' } })
     service.send('NEXT')
     expect(service.state).toMatchObject({ value: 'B', context: { test: 'world' } })
+  })
+
+  it('should execute delayed transition actions', () => {
+    vi.useFakeTimers()
+    const config = {
+      initial: 'A',
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              actions: () => send({ type: 'B' }, 5000)
+            },
+            B: {
+              target: 'B'
+            },
+            CLOSE: {
+              target: 'C'
+            }
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'C'
+          }
+        },
+        C: {}
+      }
+    }
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<object, EventObject, TypeState> = interpret(machine)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'A' })
+    service.send('NEXT')
+    vi.advanceTimersByTime(5000)
+    expect(service.state).toMatchObject({ value: 'B' })
+  })
+
+  it('should execute delayed entry actions', () => {
+    vi.useFakeTimers()
+    const config = {
+      initial: 'green',
+      states: {
+        green: {
+          entry: () => send({ type: 'TIMER' }, 10000),
+          on: {
+            TIMER: {
+              target: 'yellow'
+            }
+          }
+        },
+        yellow: {
+          entry: () => send({ type: 'TIMER' }, 2000),
+          on: {
+            TIMER: {
+              target: 'red'
+            }
+          }
+        },
+        red: {
+          entry: () => send({ type: 'TIMER' }, 10000),
+          on: {
+            TIMER: {
+              target: 'green'
+            }
+          }
+        }
+      }
+    }
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<object, EventObject, TypeState> = interpret(machine)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'green' })
+    vi.advanceTimersByTime(10000)
+    expect(service.state).toMatchObject({ value: 'yellow' })
+    vi.advanceTimersByTime(2000)
+    expect(service.state).toMatchObject({ value: 'red' })
+    vi.advanceTimersByTime(10000)
+    expect(service.state).toMatchObject({ value: 'green' })
+  })
+
+  it('should cancel a delayed action', () => {
+    vi.useFakeTimers()
+    const config = {
+      initial: 'A',
+      states: {
+        A: {
+          on: {
+            NEXT: {
+              actions: () => send({ type: 'B' }, 5000)
+            },
+            B: {
+              target: 'B'
+            },
+            CLOSE: {
+              target: 'C'
+            }
+          }
+        },
+        B: {
+          on: {
+            NEXT: 'C'
+          }
+        },
+        C: {}
+      }
+    }
+    const machine = createMachine(config)
+    const service: StateMachineServiceInterface<object, EventObject, TypeState> = interpret(machine)
+    service.start()
+    expect(service.state).toMatchObject({ value: 'A' })
+    service.send('NEXT')
+    vi.advanceTimersByTime(1000)
+    service.send('CLOSE')
+    vi.advanceTimersByTime(4000)
+    expect(service.state).toMatchObject({ value: 'C' })
   })
 })

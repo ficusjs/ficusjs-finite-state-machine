@@ -27,11 +27,19 @@ export interface AssignmentObject<TContext extends object> {
   assignment: (context: TContext) => TContext
 }
 
+export interface SendObject<TEvent extends EventObject> {
+  type: 'send'
+  event: TEvent
+  delay: number
+}
+
 export type ActionFunction<TContext extends object, TEvent extends EventObject> = (context?: TContext, event?: TEvent['type'] | TEvent) => void
 
 export type AssignActionFunction<TContext extends object, TEvent extends EventObject> = (context?: TContext, event?: TEvent['type'] | TEvent) => AssignmentObject<TContext>
 
-export type Action<TContext extends object, TEvent extends EventObject> = string | ActionFunction<TContext, TEvent> | AssignActionFunction<TContext, TEvent>
+export type SendActionFunction<TContext extends object, TEvent extends EventObject> = (context?: TContext, event?: TEvent['type'] | TEvent) => SendObject<TEvent>
+
+export type Action<TContext extends object, TEvent extends EventObject> = string | ActionFunction<TContext, TEvent> | AssignActionFunction<TContext, TEvent> | SendActionFunction<TContext, TEvent>
 
 export type Actions<TContext extends object, TEvent extends EventObject> = Action<TContext, TEvent> | Array<Action<TContext, TEvent>>
 

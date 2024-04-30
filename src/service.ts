@@ -4,7 +4,7 @@ import {
   type AlwaysConfig,
   type AlwaysTransitionObject,
   type AssignmentObject,
-  type EventObject,
+  type EventObject, type SendActionFunction, type SendObject,
   type State,
   type StateMachineInterface,
   type TypeState
@@ -13,12 +13,14 @@ import { type ServiceOptions, ServiceStatus, type StateMachineServiceInterface }
 import { toArray } from './util/to-array'
 
 export const ASSIGN_ACTION_TYPE = 'assignment'
+export const SEND_ACTION_TYPE = 'send'
 
 class StateMachineService<TContext extends object, TEvent extends EventObject, TState extends TypeState> implements StateMachineServiceInterface<TContext, TEvent, TState> {
   private status: ServiceStatus
   private currentState: State<TContext, TEvent, TState>
   private readonly listeners: any[] = []
   private readonly activeTimers: Map<number, ReturnType<typeof setTimeout>> = new Map()
+  private currentTimer: any = null
 
   constructor (private readonly machine: StateMachineInterface<TContext, TEvent, TState>, private readonly options?: ServiceOptions<TContext, TEvent>) {
     this.status = ServiceStatus.Stopped
@@ -29,8 +31,18 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
     return this.currentState
   }
 
-  send (event: TEvent['type'] | TEvent): void {
+  send (event: TEvent['type'] | TEvent, after?: number): void {
     if (this.status !== ServiceStatus.Running) {
+      return
+    }
+    if (this.currentTimer != null) {
+      clearTimeout(this.currentTimer)
+      this.currentTimer = -1
+    }
+    if (after != null) {
+      this.currentTimer = window.setTimeout(() => {
+        this.send(event)
+      }, after)
       return
     }
     const nextState = this.machine.transition(this.currentState, event)
@@ -79,17 +91,21 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
 
   private executeActions<TAction> (actions: TAction, event?: TEvent['type'] | TEvent, context?: TContext): void {
     toArray(actions).forEach((action) => {
-      let actionFunc: ActionFunction<TContext, TEvent> | AssignActionFunction<TContext, TEvent>
+      let actionFunc: ActionFunction<TContext, TEvent> | AssignActionFunction<TContext, TEvent> | SendActionFunction<TContext, TEvent>
       if (typeof action === 'string') {
         actionFunc = this.options?.actions?.[action as string] as ActionFunction<TContext, TEvent>
       } else {
-        actionFunc = action as ActionFunction<TContext, TEvent> | AssignActionFunction<TContext, TEvent>
+        actionFunc = action as ActionFunction<TContext, TEvent> | AssignActionFunction<TContext, TEvent> | SendActionFunction<TContext, TEvent>
       }
       if (actionFunc != null) {
         const actionResult = actionFunc(context, event)
         if (actionResult != null && typeof actionResult === 'object' && actionResult.type === ASSIGN_ACTION_TYPE && context != null) {
           this.currentState.context = actionResult.assignment(context)
           this.currentState.changed = true
+        } else if (actionResult != null && typeof actionResult === 'object' && actionResult.type === SEND_ACTION_TYPE) {
+          this.currentTimer = setTimeout(() => {
+            this.send(actionResult.event)
+          }, actionResult.delay)
         }
       }
     })
@@ -230,5 +246,15 @@ export function assign<
   return {
     type: ASSIGN_ACTION_TYPE,
     assignment: (context: TContext) => Object.assign({}, context, assigner)
+  }
+}
+
+export function send<
+  TEvent extends EventObject,
+> (event: TEvent, delay = 0): SendObject<TEvent> {
+  return {
+    type: SEND_ACTION_TYPE,
+    event,
+    delay
   }
 }
