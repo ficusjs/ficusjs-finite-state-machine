@@ -1,6 +1,6 @@
 {
   "name": "@ficusjs/finite-state-machine",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Finite State Machine in TypeScript",
   "type": "module",
   "main": "dist/index.mjs",
