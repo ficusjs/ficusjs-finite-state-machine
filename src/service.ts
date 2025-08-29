@@ -19,7 +19,7 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
   private status: ServiceStatus
   private currentState: State<TContext, TEvent, TState>
   private readonly listeners: any[] = []
-  private readonly activeTimers: Map<number, ReturnType<typeof setTimeout>> = new Map()
+  private readonly activeTimers = new Map<number, ReturnType<typeof setTimeout>>()
   private currentTimer: any = null
 
   constructor (private readonly machine: StateMachineInterface<TContext, TEvent, TState>, private readonly options?: ServiceOptions<TContext, TEvent>) {
@@ -161,7 +161,7 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
   }
 
   private clearTimers (): void {
-    this.activeTimers.forEach((timer) => clearTimeout(timer))
+    this.activeTimers.forEach((timer) => { clearTimeout(timer) })
     this.activeTimers.clear()
   }
 
@@ -169,7 +169,7 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
     return this.machine.afterConfig(state)
   }
 
-  private checkAlwaysTransitions (visitedStates: Set<TState['value']> = new Set()): void {
+  private checkAlwaysTransitions (visitedStates = new Set<TState['value']>()): void {
     // Prevent infinite loops by tracking visited states
     if (visitedStates.has(this.currentState.value)) {
       return

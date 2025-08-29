@@ -5,7 +5,7 @@ It is inspired by the [@xstate/fsm](https://xstate.js.org/docs/packages/xstate-f
 
 **Why choose this library over `@xstate/fsm`?**
 
-- You want a lightweight library (1.5KB minified + gzipped)
+- You want a lightweight library (2.3KB minified + gzipped)
 - State machine services can be retrieved and used in components
 - Exit actions are executed before state changes
 - Entry actions are executed after state changes

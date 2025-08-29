@@ -36,8 +36,9 @@
   "homepage": "https://github.com/ficusjs/ficusjs-finite-state-machine#readme",
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.3",
-    "@rollup/plugin-typescript": "^11.1.4",
+    "@rollup/plugin-typescript": "11.1.4",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@types/node": "^24.3.0",
     "@vitest/coverage-v8": "^1.2.0",
     "eslint": "^8.50.0",
     "eslint-config-standard-with-typescript": "^39.1.0",
@@ -49,7 +50,7 @@
     "rollup-plugin-dts": "^6.0.2",
     "rollup-plugin-filesize": "^10.0.0",
     "ts-standard": "^12.0.2",
-    "typescript": "^5.2.2",
+    "typescript": "5.2.2",
     "vitest": "^1.2.0"
   },
   "exports": {
