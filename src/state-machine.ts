@@ -1,5 +1,7 @@
 import {
   type Actions,
+  type AfterConfig,
+  type AlwaysConfig,
   type EventObject,
   type State,
   type StateMachineConfig,
@@ -131,6 +133,16 @@ class StateMachine<TContext extends object, TEvent extends EventObject, TState e
   entryActions (state: TState['value'] | State<TContext, TEvent, TState>): Actions<TContext, TEvent> {
     const stateObject = this.toStateObject(state)
     return this.config.states[stateObject.value].entry ?? []
+  }
+
+  afterConfig (state: TState['value'] | State<TContext, TEvent, TState>): AfterConfig<TContext, TEvent, TState> | undefined {
+    const stateObject = this.toStateObject(state)
+    return this.config.states[stateObject.value].after
+  }
+
+  alwaysConfig (state: TState['value'] | State<TContext, TEvent, TState>): AlwaysConfig<TContext, TEvent, TState> | undefined {
+    const stateObject = this.toStateObject(state)
+    return this.config.states[stateObject.value].always
   }
 }
 

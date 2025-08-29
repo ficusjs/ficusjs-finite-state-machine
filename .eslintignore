@@ -1,0 +1,5 @@
+vitest.config.ts
+dist/
+coverage/
+node_modules/
+*.d.ts

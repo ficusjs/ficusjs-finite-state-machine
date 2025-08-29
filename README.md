@@ -1,7 +1,7 @@
 # Finite state machine
 
 A lightweight finite state machine library.
-It is based on the [@xstate/fsm](https://xstate.js.org/docs/packages/xstate-fsm/) library.
+It is inspired by the [@xstate/fsm](https://xstate.js.org/docs/packages/xstate-fsm/) library.
 
 ## What is a finite state machine?
 
@@ -30,6 +30,8 @@ The service takes care of:
 - [x] Context
 - [x] Guards
 - [x] Entry and exit actions
+- [x] Timer transitions
+- [x] Dynamic conditional transitions
 
 ## Installation
 
