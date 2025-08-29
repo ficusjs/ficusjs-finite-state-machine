@@ -1,4 +1,5 @@
 module.exports = {
+  ignorePatterns: ['vitest.config.ts'],
   overrides: [
     {
       files: ['*.js', '*.jsx', '*.ts', '*.tsx'],
