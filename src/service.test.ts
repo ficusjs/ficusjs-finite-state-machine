@@ -1,4 +1,4 @@
-import { beforeEach, describe, it } from '@jest/globals'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { assign, interpret } from './service'
 import { createMachine } from './state-machine'
 import { type EventObject, type StateMachineConfig, type TypeState } from './state-machine-types'
@@ -64,7 +64,7 @@ describe('state-machine', () => {
   it('should notify on state change', () => {
     const machine = createMachine(config)
     const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
-    const listener = jest.fn()
+    const listener = vi.fn()
     service.subscribe(listener)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
@@ -102,7 +102,7 @@ describe('state-machine', () => {
       }
     }
     const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine, options)
-    const listener = jest.fn()
+    const listener = vi.fn()
     service.subscribe(listener)
     service.start()
     expect(service.state).toMatchObject({ value: 'A', context: { test: 'hello' } })
@@ -114,7 +114,7 @@ describe('state-machine', () => {
   it('should unsubscribe from state change', () => {
     const machine = createMachine(config)
     const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
-    const listener = jest.fn()
+    const listener = vi.fn()
     const subscription = service.subscribe(listener)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
@@ -130,7 +130,7 @@ describe('state-machine', () => {
   it('should stop notifying when the state machine has stopped', () => {
     const machine = createMachine(config)
     const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
-    const listener = jest.fn()
+    const listener = vi.fn()
     service.subscribe(listener)
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
@@ -146,7 +146,7 @@ describe('state-machine', () => {
   it('should execute entry actions', () => {
     const machine = createMachine(config)
     const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
-    const entryAction = jest.fn()
+    const entryAction = vi.fn()
     config.states.A.entry = entryAction
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
@@ -155,7 +155,7 @@ describe('state-machine', () => {
 
   it('should execute entry actions defined as strings', () => {
     const machine = createMachine(config)
-    const entryAction = jest.fn()
+    const entryAction = vi.fn()
     const options = {
       actions: {
         entryAction
@@ -171,7 +171,7 @@ describe('state-machine', () => {
   it('should execute exit actions', () => {
     const machine = createMachine(config)
     const service: StateMachineServiceInterface<TestContext, TestEvent, TestState> = interpret(machine)
-    const exitAction = jest.fn()
+    const exitAction = vi.fn()
     config.states.A.exit = exitAction
     service.start()
     expect(service.state).toMatchObject({ value: 'A' })
@@ -182,7 +182,7 @@ describe('state-machine', () => {
 
   it('should execute exit actions defined as strings', () => {
     const machine = createMachine(config)
-    const exitAction = jest.fn()
+    const exitAction = vi.fn()
     const options = {
       actions: {
         exitAction
@@ -212,7 +212,7 @@ describe('state-machine', () => {
   })
 
   it('should execute transition actions', () => {
-    const transitionAction = jest.fn()
+    const transitionAction = vi.fn()
     const config = {
       initial: 'A',
       states: {
@@ -241,7 +241,7 @@ describe('state-machine', () => {
   })
 
   it('should execute self transition actions', () => {
-    const transitionAction = jest.fn()
+    const transitionAction = vi.fn()
     const config = {
       initial: 'A',
       states: {
@@ -264,7 +264,7 @@ describe('state-machine', () => {
   })
 
   it('should execute transition actions defined as strings', () => {
-    const transitionAction = jest.fn()
+    const transitionAction = vi.fn()
     const options = {
       actions: {
         transitionAction
@@ -298,8 +298,8 @@ describe('state-machine', () => {
   })
 
   it('should execute many transition action functions', () => {
-    const transitionAction1 = jest.fn()
-    const transitionAction2 = jest.fn()
+    const transitionAction1 = vi.fn()
+    const transitionAction2 = vi.fn()
     const config = {
       initial: 'A',
       states: {
@@ -329,8 +329,8 @@ describe('state-machine', () => {
   })
 
   it('should execute many transition action functions defined as strings', () => {
-    const transitionAction1 = jest.fn()
-    const transitionAction2 = jest.fn()
+    const transitionAction1 = vi.fn()
+    const transitionAction2 = vi.fn()
     const options = {
       actions: {
         transitionAction1,
@@ -366,8 +366,8 @@ describe('state-machine', () => {
   })
 
   it('should execute many transition action functions defined as strings and functions', () => {
-    const transitionAction1 = jest.fn()
-    const transitionAction2 = jest.fn()
+    const transitionAction1 = vi.fn()
+    const transitionAction2 = vi.fn()
     const options = {
       actions: {
         transitionAction1

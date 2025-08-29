@@ -1,6 +1,8 @@
 import {
   type ActionFunction, type AssignActionFunction,
   type AfterConfig,
+  type AlwaysConfig,
+  type AlwaysTransitionObject,
   type AssignmentObject,
   type EventObject,
   type State,
@@ -41,6 +43,7 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
         this.executeActions(nextState.actions, event, nextState.context)
         this.notifyListeners()
         this.setupTimers()
+        this.checkAlwaysTransitions()
       } else {
         this.currentState = nextState
         this.executeActions(nextState.actions, event, nextState.context)
@@ -62,6 +65,7 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
     this.status = ServiceStatus.Running
     this.executeActions(this.machine.entryActions(this.currentState))
     this.setupTimers()
+    this.checkAlwaysTransitions()
   }
 
   stop (): void {
@@ -129,6 +133,9 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
 
               // Setup new timers for the new state
               this.setupTimers()
+
+              // Check for always transitions in the new state
+              this.checkAlwaysTransitions()
             }
           }, delayMs)
           this.activeTimers.set(delayMs, timer)
@@ -144,6 +151,68 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
 
   private getAfterConfig (state: State<TContext, TEvent, TState>): AfterConfig<TContext, TEvent, TState> | undefined {
     return this.machine.afterConfig(state)
+  }
+
+  private checkAlwaysTransitions (visitedStates: Set<TState['value']> = new Set()): void {
+    // Prevent infinite loops by tracking visited states
+    if (visitedStates.has(this.currentState.value)) {
+      return
+    }
+
+    const alwaysConfig = this.machine.alwaysConfig(this.currentState)
+    if (alwaysConfig == null) {
+      return
+    }
+
+    const resolvedTransition = this.resolveAlwaysTransition(alwaysConfig)
+    if (resolvedTransition != null) {
+      // Add current state to visited set
+      visitedStates.add(this.currentState.value)
+
+      // Create a synthetic always event
+      const alwaysEvent: TEvent = { type: `xstate.always#${this.currentState.value}` } as any
+
+      // Clear timers since we're transitioning
+      this.clearTimers()
+
+      // Execute exit actions of current state
+      this.executeActions(this.machine.exitActions(this.currentState), alwaysEvent, this.currentState.context)
+
+      // Update state to target
+      this.currentState = {
+        ...this.currentState,
+        value: resolvedTransition.target,
+        changed: true
+      }
+
+      // Execute entry actions of new state
+      this.executeActions(this.machine.entryActions(this.currentState), alwaysEvent, this.currentState.context)
+
+      // Execute transition actions
+      this.executeActions(resolvedTransition.actions, alwaysEvent, this.currentState.context)
+
+      // Notify listeners
+      this.notifyListeners()
+
+      // Setup timers for the new state
+      this.setupTimers()
+
+      // Recursively check for always transitions in the new state
+      this.checkAlwaysTransitions(visitedStates)
+    }
+  }
+
+  private resolveAlwaysTransition (alwaysConfig: AlwaysConfig<TContext, TEvent, TState>): AlwaysTransitionObject<TContext, TEvent, TState> | undefined {
+    const transitions = Array.isArray(alwaysConfig) ? alwaysConfig : [alwaysConfig]
+
+    // Find the first transition whose guard passes (or has no guard)
+    for (const transition of transitions) {
+      if (transition.cond == null || transition.cond(this.currentState)) {
+        return transition
+      }
+    }
+
+    return undefined
   }
 }
 

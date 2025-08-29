@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createMachine } from './state-machine'
 import { interpret } from './service'
 import { type EventObject, type TypeState } from './state-machine-types'
@@ -17,12 +18,12 @@ interface TestState extends TypeState {
 
 describe('StateMachineService with timers', () => {
   beforeEach(() => {
-    jest.useFakeTimers()
+    vi.useFakeTimers()
   })
 
   afterEach(() => {
-    jest.clearAllTimers()
-    jest.useRealTimers()
+    vi.clearAllTimers()
+    vi.useRealTimers()
   })
 
   it('should transition after specified delay', () => {
@@ -55,16 +56,16 @@ describe('StateMachineService with timers', () => {
     expect(service.state.value).toBe('running')
 
     // Timer should not have fired yet
-    jest.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(1000)
     expect(service.state.value).toBe('running')
 
     // Timer should fire after 2000ms
-    jest.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(1000)
     expect(service.state.value).toBe('completed')
   })
 
   it('should execute actions when timer transitions', () => {
-    const actionSpy = jest.fn()
+    const actionSpy = vi.fn()
 
     const machine = createMachine<TestContext, TestEvent, TestState>({
       initial: 'idle',
@@ -98,7 +99,7 @@ describe('StateMachineService with timers', () => {
     service.send('START')
     expect(actionSpy).not.toHaveBeenCalled()
 
-    jest.advanceTimersByTime(1500)
+    vi.advanceTimersByTime(1500)
     expect(actionSpy).toHaveBeenCalledTimes(1)
     expect(service.state.value).toBe('completed')
   })
@@ -132,7 +133,7 @@ describe('StateMachineService with timers', () => {
     expect(service.state.value).toBe('running')
 
     // Advance time but not enough to trigger timer
-    jest.advanceTimersByTime(1500)
+    vi.advanceTimersByTime(1500)
     expect(service.state.value).toBe('running')
 
     // Transition to stopped state should cancel the timer
@@ -140,13 +141,13 @@ describe('StateMachineService with timers', () => {
     expect(service.state.value).toBe('stopped')
 
     // Even if we advance time, timer should not fire
-    jest.advanceTimersByTime(2000)
+    vi.advanceTimersByTime(2000)
     expect(service.state.value).toBe('stopped')
   })
 
   it('should support multiple timers with different delays', () => {
-    const action1Spy = jest.fn()
-    const action2Spy = jest.fn()
+    const action1Spy = vi.fn()
+    const action2Spy = vi.fn()
 
     const machine = createMachine<TestContext, TestEvent, TestState>({
       initial: 'idle',
@@ -184,7 +185,7 @@ describe('StateMachineService with timers', () => {
     service.send('START')
 
     // First timer should fire at 1000ms
-    jest.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(1000)
     expect(action1Spy).toHaveBeenCalledTimes(1)
     expect(action2Spy).not.toHaveBeenCalled()
     expect(service.state.value).toBe('stopped')
@@ -219,7 +220,7 @@ describe('StateMachineService with timers', () => {
     service.stop()
 
     // Timer should not fire even after delay
-    jest.advanceTimersByTime(3000)
+    vi.advanceTimersByTime(3000)
     expect(service.state.value).toBe('running') // State should not change
   })
 
@@ -249,11 +250,11 @@ describe('StateMachineService with timers', () => {
     expect(service.state.value).toBe('idle')
 
     // First timer fires after 1000ms
-    jest.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(1000)
     expect(service.state.value).toBe('running')
 
     // Second timer fires after 1500ms more
-    jest.advanceTimersByTime(1500)
+    vi.advanceTimersByTime(1500)
     expect(service.state.value).toBe('completed')
   })
 
@@ -284,7 +285,7 @@ describe('StateMachineService with timers', () => {
     expect(service.state.value).toBe('running')
 
     // No timer should fire
-    jest.advanceTimersByTime(5000)
+    vi.advanceTimersByTime(5000)
     expect(service.state.value).toBe('running')
   })
 })

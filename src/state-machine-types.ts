@@ -44,6 +44,14 @@ export interface AfterConfig<TContext extends object, TEvent extends EventObject
   [delay: number]: AfterTransitionObject<TContext, TEvent, TState>
 }
 
+export interface AlwaysTransitionObject<TContext extends object, TEvent extends EventObject, TState extends TypeState> {
+  target: TState['value']
+  actions?: Actions<TContext, TEvent>
+  cond?: (state: State<TContext, TEvent, TState>) => boolean
+}
+
+export type AlwaysConfig<TContext extends object, TEvent extends EventObject, TState extends TypeState> = AlwaysTransitionObject<TContext, TEvent, TState> | Array<AlwaysTransitionObject<TContext, TEvent, TState>>
+
 export interface StateMachineConfig<TContext extends object, TEvent extends EventObject, TState extends TypeState> {
   initial?: TState['value']
   context?: TContext
@@ -55,6 +63,7 @@ export interface StateMachineConfig<TContext extends object, TEvent extends Even
       entry?: Actions<TContext, TEvent>
       exit?: Actions<TContext, TEvent>
       after?: AfterConfig<TContext, TEvent, TState>
+      always?: AlwaysConfig<TContext, TEvent, TState>
     }
   }
 }
@@ -65,4 +74,5 @@ export interface StateMachineInterface<TContext extends object, TEvent extends E
   exitActions: (state: TState['value'] | State<TContext, TEvent, TState>) => Actions<TContext, TEvent>
   entryActions: (state: TState['value'] | State<TContext, TEvent, TState>) => Actions<TContext, TEvent>
   afterConfig: (state: TState['value'] | State<TContext, TEvent, TState>) => AfterConfig<TContext, TEvent, TState> | undefined
+  alwaysConfig: (state: TState['value'] | State<TContext, TEvent, TState>) => AlwaysConfig<TContext, TEvent, TState> | undefined
 }
