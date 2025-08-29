@@ -1,5 +1,6 @@
 import {
   type ActionFunction, type AssignActionFunction,
+  type AfterConfig,
   type AssignmentObject,
   type EventObject,
   type State,
@@ -15,6 +16,7 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
   private status: ServiceStatus
   private currentState: State<TContext, TEvent, TState>
   private readonly listeners: any[] = []
+  private readonly activeTimers: Map<number, ReturnType<typeof setTimeout>> = new Map()
 
   constructor (private readonly machine: StateMachineInterface<TContext, TEvent, TState>, private readonly options?: ServiceOptions<TContext, TEvent>) {
     this.status = ServiceStatus.Stopped
@@ -32,11 +34,13 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
     const nextState = this.machine.transition(this.currentState, event)
     if (nextState != null) {
       if (nextState.value !== this.currentState.value) {
+        this.clearTimers()
         this.executeActions(this.machine.exitActions(this.currentState), event, nextState.context)
         this.currentState = nextState
         this.executeActions(this.machine.entryActions(nextState), event, nextState.context)
         this.executeActions(nextState.actions, event, nextState.context)
         this.notifyListeners()
+        this.setupTimers()
       } else {
         this.currentState = nextState
         this.executeActions(nextState.actions, event, nextState.context)
@@ -57,10 +61,12 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
   start (): void {
     this.status = ServiceStatus.Running
     this.executeActions(this.machine.entryActions(this.currentState))
+    this.setupTimers()
   }
 
   stop (): void {
     this.status = ServiceStatus.Stopped
+    this.clearTimers()
   }
 
   private notifyListeners (): void {
@@ -83,6 +89,61 @@ class StateMachineService<TContext extends object, TEvent extends EventObject, T
         }
       }
     })
+  }
+
+  private setupTimers (): void {
+    const afterConfig = this.getAfterConfig(this.currentState)
+    if (afterConfig != null) {
+      Object.entries(afterConfig).forEach(([delay, transition]) => {
+        const delayMs = Number(delay)
+        if (!isNaN(delayMs)) {
+          const timer = setTimeout(() => {
+            this.activeTimers.delete(delayMs)
+            // Create a synthetic timer event
+            const timerEvent: TEvent = { type: `xstate.after(${delayMs})#${this.currentState.value}` } as any
+
+            // Transition to the target state
+            const nextState = this.machine.transition(this.currentState, timerEvent)
+            if (nextState != null || transition.target !== this.currentState.value) {
+              // Clear any other timers since we're transitioning
+              this.clearTimers()
+
+              // Execute exit actions of current state
+              this.executeActions(this.machine.exitActions(this.currentState), timerEvent, this.currentState.context)
+
+              // Update state to target
+              this.currentState = {
+                ...this.currentState,
+                value: transition.target,
+                changed: true
+              }
+
+              // Execute entry actions of new state
+              this.executeActions(this.machine.entryActions(this.currentState), timerEvent, this.currentState.context)
+
+              // Execute transition actions
+              this.executeActions(transition.actions, timerEvent, this.currentState.context)
+
+              // Notify listeners
+              this.notifyListeners()
+
+              // Setup new timers for the new state
+              this.setupTimers()
+            }
+          }, delayMs)
+          this.activeTimers.set(delayMs, timer)
+        }
+      })
+    }
+  }
+
+  private clearTimers (): void {
+    this.activeTimers.forEach((timer) => clearTimeout(timer))
+    this.activeTimers.clear()
+  }
+
+  private getAfterConfig (state: State<TContext, TEvent, TState>): AfterConfig<TContext, TEvent, TState> | undefined {
+    return this.machine.afterConfig(state)
   }
 }
 
